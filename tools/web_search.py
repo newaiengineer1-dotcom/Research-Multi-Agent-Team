@@ -19,18 +19,19 @@ class WebSearchTool(BaseTool):
     )
     args_schema: Type[BaseModel] = WebSearchInput
 
-    def _run(self, query: str) -> str:
-        try:
-            results = DDGS().text(query, max_results=5)
-            if not results:
-                return "No results found for this query."
-            output = []
-            for r in results:
-                output.append(
-                    f"**{r.get('title', 'N/A')}**\n"
-                    f"{r.get('body', 'N/A')}\n"
-                    f"Source: {r.get('href', 'N/A')}"
-                )
-            return "\n\n---\n\n".join(output)
-        except Exception as e:
-            return f"Search failed: {str(e)}. Try rephrasing the query."
+   def _run(self, query: str) -> str:
+    try:
+        results = DDGS().text(query, max_results=2)
+        if not results:
+            return "No results found for this query."
+        output = []
+        for r in results:
+            body = r.get('body', 'N/A')[:300]
+            output.append(
+                f"**{r.get('title', 'N/A')}**\n"
+                f"{body}\n"
+                f"Source: {r.get('href', 'N/A')}"
+            )
+        return "\n\n---\n\n".join(output)
+    except Exception as e:
+        return f"Search failed: {str(e)}. Try rephrasing the query."
