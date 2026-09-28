@@ -23,25 +23,28 @@ def load_config(path: str = "config/agents.yaml") -> dict:
 def build_crew(topic: str, num_pages: int = 1) -> Crew:
     config = load_config()
 
-    # --- LLM Instances (Groq Free Tier — all on gpt-oss-20b) ---
-    cheap_llm = LLM(
-        model="groq/openai/gpt-oss-20b",
-        temperature=0.5,
-        additional_drop_params=["cache_breakpoint", "is_litellm"],
-        max_tokens=800,
-    )
-    strong_llm = LLM(
-        model="groq/openai/gpt-oss-20b",
-        temperature=0.7,
-        additional_drop_params=["cache_breakpoint", "is_litellm"],
-        max_tokens=2000,
-    )
-    tool_llm = LLM(
-        model="groq/openai/gpt-oss-20b",
-        temperature=0.4,
-        additional_drop_params=["cache_breakpoint", "is_litellm"],
-        max_tokens=1000,
-    )
+# crew.py — updated LLM section
+cheap_llm = LLM(
+    model="groq/openai/gpt-oss-20b",
+    temperature=0.5,
+    additional_drop_params=["cache_breakpoint", "is_litellm"],
+    max_tokens=800,
+    reasoning_effort="low",
+)
+strong_llm = LLM(
+    model="groq/openai/gpt-oss-20b",
+    temperature=0.7,
+    additional_drop_params=["cache_breakpoint", "is_litellm"],
+    max_tokens=2000,
+    reasoning_effort="low",
+)
+tool_llm = LLM(
+    model="groq/openai/gpt-oss-20b",
+    temperature=0.4,
+    additional_drop_params=["cache_breakpoint", "is_litellm"],
+    max_tokens=1000,
+    reasoning_effort="medium",
+)
 
     # --- Agents ---
     planner = create_planner(cheap_llm, config["planner"])
