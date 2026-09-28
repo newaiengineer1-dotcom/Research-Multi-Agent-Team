@@ -239,12 +239,16 @@ if st.button("🚀 Start Research", type="primary", use_container_width=True):
                 result = crew.kickoff()
                 report_text = str(result)
             except Exception as e:
-                report_text = f"**⚠️ Error:** {str(e)}"
-
-        # Final status: mark all as done
-        for key, icon, name, desc in AGENTS:
-            st.session_state.agent_status[key] = "done"
-            render_agent_card(placeholders[key], key, icon, name, desc, "done")
+    if "rate_limit_exceeded" in str(e).lower():
+        report_text = (
+            "**⏳ Daily token limit reached.**\n\n"
+            "Groq's free tier allows 200,000 tokens per day. "
+            "Please wait for the daily reset (resets at midnight UTC) "
+            "or use a different Groq account.\n\n"
+            "**Tip:** Keep report length at 1-3 pages to get more runs per day."
+        )
+    else:
+        report_text = f"**⚠️ Error:** {str(e)}"
 
         # ── Display Report ──────────────────────────────────────────
         with report_container:
