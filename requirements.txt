@@ -6,4 +6,4 @@ ddgs>=9.0.0
 python-dotenv>=1.0.1
 pydantic>=2.10.6
 pyyaml>=6.0.2
-litellm>=1.60.0
+litellm>=1.99.0
