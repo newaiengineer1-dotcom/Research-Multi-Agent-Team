@@ -4,7 +4,6 @@ from crewai.llm import LLM
 
 
 def create_planner(llm: LLM, config: dict) -> Agent:
-    """Creates the Research Planner agent."""
     return Agent(
         role=config["role"],
         goal=config["goal"],
