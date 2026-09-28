@@ -4,7 +4,6 @@ from crewai.llm import LLM
 
 
 def create_reviewer(llm: LLM, config: dict) -> Agent:
-    """Creates the Quality Reviewer agent."""
     return Agent(
         role=config["role"],
         goal=config["goal"],
