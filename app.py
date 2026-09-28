@@ -124,15 +124,14 @@ with st.sidebar:
     num_pages = st.select_slider(
         "Report Length",
         options=[1, 2, 3, 5, 7, 10],
-        value=3,
+        value=1,
         format_func=lambda x: f"{x} page{'s' if x > 1 else ''}",
-        help="Longer reports use more tokens. 3 pages is optimal for the free tier.",
+        help="Longer reports use more tokens. 1-3 pages is optimal for the free tier.",
     )
 
     st.markdown("---")
     st.markdown("### 🆓 Free Tier Info")
-    st.caption("**Groq Chat Models:** 30 RPM · 1,000 RPD · 200K TPD")
-    st.caption("**Groq Compound:** 30 RPM · 250 RPD · 70K TPM")
+    st.caption("**Groq:** 30 RPM · 1K RPD · 200K TPD")
     st.caption("**ddgs:** Unlimited searches")
     st.markdown("---")
     st.markdown("### 👥 Agent Team")
@@ -217,10 +216,9 @@ if st.button("🚀 Start Research", type="primary", use_container_width=True):
                 placeholders[key] = ph
                 render_agent_card(ph, key, icon, name, desc, "queued")
 
-        # ── Run the crew with live status updates ───────────────────
+        # ── Animate agent cards while the crew runs ─────────────────
         with st.spinner("Agents are working... This may take 1–3 minutes."):
-            # Animate the agent cards while the crew runs
-            for i, (key, icon, name, desc) in enumerate(AGENTS):
+            for key, icon, name, desc in AGENTS:
                 st.session_state.agent_status[key] = "running"
                 for k, (ik, ic, nm, dc) in enumerate(AGENTS):
                     render_agent_card(
@@ -233,22 +231,30 @@ if st.button("🚀 Start Research", type="primary", use_container_width=True):
                     placeholders[key], key, icon, name, desc, "done",
                 )
 
-            # Execute the actual crew
-                       try:
+            # ── Execute the actual crew ─────────────────────────────
+            try:
                 crew = build_crew(topic, num_pages)
                 result = crew.kickoff()
                 report_text = str(result)
             except Exception as e:
-                if "rate_limit_exceeded" in str(e).lower():
+                error_str = str(e).lower()
+                if "rate_limit_exceeded" in error_str or "rate limit" in error_str:
                     report_text = (
                         "**⏳ Daily token limit reached.**\n\n"
                         "Groq's free tier allows 200,000 tokens per day. "
                         "Please wait for the daily reset (midnight UTC) "
                         "or use a different Groq account.\n\n"
-                        "**Tip:** Keep report length at 1-3 pages to get more runs per day."
+                        "**Tip:** Keep report length at 1-3 pages to get "
+                        "more runs per day."
                     )
                 else:
                     report_text = f"**⚠️ Error:** {str(e)}"
+
+        # Final status: mark all as done
+        for key, icon, name, desc in AGENTS:
+            st.session_state.agent_status[key] = "done"
+            render_agent_card(placeholders[key], key, icon, name, desc, "done")
+
         # ── Display Report ──────────────────────────────────────────
         with report_container:
             st.markdown("---")
