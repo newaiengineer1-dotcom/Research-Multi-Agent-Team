@@ -1,4 +1,9 @@
 # crew.py
+# ── GROQ COMPATIBILITY FIX ──────────────────────────────────────────
+import litellm
+litellm.drop_params = True  # Drops unsupported params like cache_breakpoint
+# ────────────────────────────────────────────────────────────────────
+
 import yaml
 from crewai import Crew, Task, Process
 from crewai.llm import LLM
@@ -21,41 +26,34 @@ def load_config(path: str = "config/agents.yaml") -> dict:
 def build_crew(topic: str, num_pages: int = 3) -> Crew:
     """
     Assembles the 6-agent research crew.
-
     LLM Strategy (Groq Free Tier — September 2026):
-    - Cheap tasks (planning, analysis, review): gpt-oss-20b
-    - Writing tasks: gpt-oss-120b
-    - Tool-calling tasks (research, validation): groq/compound
+    - Cheap reasoning: gpt-oss-20b
+    - Strong writing: gpt-oss-120b
+    - Tool-calling: compound-mini
     """
     config = load_config()
 
     # --- LLM Instances ---
-    # Fast, cheap model for reasoning-only agents
     cheap_llm = LLM(
         model="groq/openai/gpt-oss-20b",
         temperature=0.5,
     )
-
-    # Strong model for final writing quality
     strong_llm = LLM(
         model="groq/openai/gpt-oss-120b",
         temperature=0.7,
     )
-
-    # Agentic model for reliable multi-turn tool calling
-    # groq/compound is Groq's built-in agentic model with native tool support
     tool_llm = LLM(
         model="groq/compound-mini",
         temperature=0.4,
     )
 
     # --- Agents ---
-    planner = create_planner(cheap_llm, config["planner"])
+    planner    = create_planner(cheap_llm, config["planner"])
     researcher = create_researcher(tool_llm, config["researcher"])
-    validator = create_validator(tool_llm, config["validator"])
-    analyst = create_analyst(cheap_llm, config["analyst"])
-    writer = create_writer(strong_llm, config["writer"])
-    reviewer = create_reviewer(cheap_llm, config["reviewer"])
+    validator  = create_validator(tool_llm, config["validator"])
+    analyst    = create_analyst(cheap_llm, config["analyst"])
+    writer     = create_writer(strong_llm, config["writer"])
+    reviewer   = create_reviewer(cheap_llm, config["reviewer"])
 
     # --- Tasks ---
     plan_task = Task(
