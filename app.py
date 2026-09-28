@@ -234,22 +234,21 @@ if st.button("🚀 Start Research", type="primary", use_container_width=True):
                 )
 
             # Execute the actual crew
-            try:
+                       try:
                 crew = build_crew(topic, num_pages)
                 result = crew.kickoff()
                 report_text = str(result)
             except Exception as e:
-    if "rate_limit_exceeded" in str(e).lower():
-        report_text = (
-            "**⏳ Daily token limit reached.**\n\n"
-            "Groq's free tier allows 200,000 tokens per day. "
-            "Please wait for the daily reset (resets at midnight UTC) "
-            "or use a different Groq account.\n\n"
-            "**Tip:** Keep report length at 1-3 pages to get more runs per day."
-        )
-    else:
-        report_text = f"**⚠️ Error:** {str(e)}"
-
+                if "rate_limit_exceeded" in str(e).lower():
+                    report_text = (
+                        "**⏳ Daily token limit reached.**\n\n"
+                        "Groq's free tier allows 200,000 tokens per day. "
+                        "Please wait for the daily reset (midnight UTC) "
+                        "or use a different Groq account.\n\n"
+                        "**Tip:** Keep report length at 1-3 pages to get more runs per day."
+                    )
+                else:
+                    report_text = f"**⚠️ Error:** {str(e)}"
         # ── Display Report ──────────────────────────────────────────
         with report_container:
             st.markdown("---")
