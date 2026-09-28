@@ -1,52 +1,60 @@
 # litellm_patch.py
 """
-Monkey-patch LiteLLM to strip the 'cache_breakpoint' parameter that Groq's API
-does not support. This resolves the error:
-  litellm.BadRequestError: GroqException - 'messages.0' : for 'role:system' the
-  following must be satisfied[('messages.0' : property 'cache_breakpoint' is
-  unsupported)]
+Monkey-patch LiteLLM to strip parameters that Groq's API rejects.
 
-Inspired by the CrewAI community workaround for the identical 'is_litellm' bug.
+Fixes two distinct CrewAI -> Groq compatibility issues:
+  1. 'cache_breakpoint' injected into system messages by CrewAI's cache layer
+     Error: "'messages.0' : for 'role:system' ... property 'cache_breakpoint'
+             is unsupported"
+  2. 'is_litellm' injected at the top level by CrewAI's LLM wrapper
+     Error: "is_litellm is unsupported"
+
+Both keys are stripped from every outgoing completion request before it reaches
+the provider. This is the documented CrewAI community workaround.
 """
 import litellm
 
-# Save the original completion function before patching
+# Keys to strip from the top-level kwargs
+UNSUPPORTED_TOP_LEVEL_KEYS = ["is_litellm", "cache_breakpoint"]
+
+# Save the original functions before patching
 _original_completion = litellm.completion
+_original_acompletion = getattr(litellm, "acompletion", None)
 
 
-def _patched_completion(*args, **kwargs):
-    """Strip unsupported keys from the request before sending to the provider."""
-    # 1. Strip top-level cache_breakpoint if present
-    kwargs.pop("cache_breakpoint", None)
+def _clean_kwargs(kwargs: dict) -> dict:
+    """Removes unsupported keys from top-level kwargs and from messages."""
+    # 1. Strip unsupported top-level keys
+    for key in UNSUPPORTED_TOP_LEVEL_KEYS:
+        kwargs.pop(key, None)
 
-    # 2. Strip cache_breakpoint from each message in the messages array
+    # 2. Strip cache_breakpoint from each message dict
     messages = kwargs.get("messages", [])
     if isinstance(messages, list):
         for msg in messages:
             if isinstance(msg, dict) and "cache_breakpoint" in msg:
                 del msg["cache_breakpoint"]
 
-    # 3. Call the original completion with cleaned kwargs
+    return kwargs
+
+
+def _patched_completion(*args, **kwargs):
+    """Sync completion wrapper."""
+    kwargs = _clean_kwargs(kwargs)
     return _original_completion(*args, **kwargs)
+
+
+async def _patched_acompletion(*args, **kwargs):
+    """Async completion wrapper."""
+    kwargs = _clean_kwargs(kwargs)
+    return await _original_acompletion(*args, **kwargs)
 
 
 def apply_patch():
     """
-    Applies the monkey-patch. Call this once at application startup,
+    Applies the monkey-patch. Call this ONCE at application startup,
     before any CrewAI or LiteLLM calls are made.
     """
     litellm.completion = _patched_completion
-    # Also patch the async variant if your code uses it
-    if hasattr(litellm, "acompletion"):
-        _original_acompletion = litellm.acompletion
-
-        async def _patched_acompletion(*args, **kwargs):
-            kwargs.pop("cache_breakpoint", None)
-            messages = kwargs.get("messages", [])
-            if isinstance(messages, list):
-                for msg in messages:
-                    if isinstance(msg, dict) and "cache_breakpoint" in msg:
-                        del msg["cache_breakpoint"]
-            return await _original_acompletion(*args, **kwargs)
-
+    if _original_acompletion is not None:
         litellm.acompletion = _patched_acompletion
