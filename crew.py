@@ -38,17 +38,24 @@ def build_crew(topic: str, num_pages: int = 3) -> Crew:
     """
     config = load_config()
 
-    # --- LLM Instances (all currently available on Groq's free tier) ---
     cheap_llm = LLM(
-        model="groq/openai/gpt-oss-20b",
-        temperature=0.5,
-        additional_drop_params=["cache_breakpoint", "is_litellm"],
-    )
-    strong_llm = LLM(
-        model="groq/openai/gpt-oss-120b",
-        temperature=0.7,
-        additional_drop_params=["cache_breakpoint", "is_litellm"],
-    )
+    model="groq/openai/gpt-oss-20b",
+    temperature=0.5,
+    additional_drop_params=["cache_breakpoint", "is_litellm"],
+    max_tokens=800,
+)
+strong_llm = LLM(
+    model="groq/openai/gpt-oss-20b",
+    temperature=0.7,
+    additional_drop_params=["cache_breakpoint", "is_litellm"],
+    max_tokens=2000,
+)
+tool_llm = LLM(
+    model="groq/openai/gpt-oss-20b",
+    temperature=0.4,
+    additional_drop_params=["cache_breakpoint", "is_litellm"],
+    max_tokens=1000,
+)
     # Tool-calling model — replaces the decommissioned groq/compound-mini
     tool_llm = LLM(
         model="groq/openai/gpt-oss-120b",
